@@ -41,6 +41,7 @@ namespace AvatarPointerGenerator
             Debug.Log(APGTag + "Success! Avatar is found to be a Humanoid rig.");
 
             GenerateHeadCollider(animator, avatar);
+            GenerateChestCollider(animator);
             GenerateHandCollider(animator, true);
             GenerateHandCollider(animator, false);
             GenerateFootCollider(animator, true);
@@ -72,8 +73,8 @@ namespace AvatarPointerGenerator
                 }
             }
 
-            float totalLength = Vector3.Distance(toesTransform.position, footTransform.position);
-            CreatePointerObject(footTransform, isLeft ? "LeftFoot" : "RightFoot", totalLength / 2f);
+            float totalLength = Vector3.Distance(footTransform.position, toesTransform.position);
+            CreatePointerObject(footTransform, isLeft ? "LeftFoot" : "RightFoot", totalLength / 2f, Vector3.zero);
         }
 
         private static void GenerateHandCollider(Animator animator, bool isLeft)
@@ -84,7 +85,38 @@ namespace AvatarPointerGenerator
 
             Transform[] fingerTransforms = bones.Select(bone => animator.GetBoneTransform(bone)).ToArray();
             float totalLength = fingerTransforms.Sum(finger => Vector3.Distance(finger.position, handTransform.position)) / fingerTransforms.Length;
-            CreatePointerObject(handTransform, isLeft ? "LeftHand" : "RightHand", totalLength / 2f);
+            CreatePointerObject(handTransform, isLeft ? "LeftHand" : "RightHand", totalLength / 2f, Vector3.zero);
+        }
+
+        private static void GenerateChestCollider(Animator animator)
+        {
+            Transform hipsTransform = animator.GetBoneTransform(HumanBodyBones.Hips);
+            Transform chestTransform = animator.GetBoneTransform(HumanBodyBones.UpperChest) ?? animator.GetBoneTransform(HumanBodyBones.Chest) ?? animator.GetBoneTransform(HumanBodyBones.Spine);
+
+            float totalLength = 0;
+            Vector3[] positions = new Vector3[]
+            {
+                animator.GetBoneTransform(HumanBodyBones.Neck)?.position ?? Vector3.zero,
+                animator.GetBoneTransform(HumanBodyBones.UpperChest)?.position ?? Vector3.zero,
+                animator.GetBoneTransform(HumanBodyBones.Chest)?.position ?? Vector3.zero,
+                animator.GetBoneTransform(HumanBodyBones.Spine)?.position ?? Vector3.zero
+            };
+
+            int totalCount = 0;
+            foreach (Vector3 pos in positions)
+            {
+                if (pos != null && hipsTransform.position.y < pos.y)
+                {
+                    totalLength += Vector3.Distance(hipsTransform.position, pos);
+                    totalCount++;
+                }
+            }
+
+            float distance = Vector3.Dot(positions[0] - hipsTransform.position, chestTransform.forward);
+            Vector3 offset = chestTransform.forward * distance;
+
+            totalLength /= totalCount;
+            CreatePointerObject(chestTransform, "Chest", totalLength / 2f, offset);
         }
 
         private static void GenerateHeadCollider(Animator animator, CVRAvatar avatar)
@@ -94,10 +126,10 @@ namespace AvatarPointerGenerator
             float totalLength = 0;
             Vector3[] positions = new Vector3[]
             {
-                animator.GetBoneTransform(HumanBodyBones.LeftEye).position,
-                animator.GetBoneTransform(HumanBodyBones.RightEye).position,
-                avatar.transform.TransformPoint(avatar.viewPosition),
-                avatar.transform.TransformPoint(avatar.voicePosition)
+                animator.GetBoneTransform(HumanBodyBones.LeftEye)?.position ?? Vector3.zero,
+                animator.GetBoneTransform(HumanBodyBones.RightEye)?.position ?? Vector3.zero,
+                avatar.transform?.TransformPoint(avatar.viewPosition) ?? Vector3.zero,
+                avatar.transform?.TransformPoint(avatar.voicePosition) ?? Vector3.zero
             };
 
             int totalCount = 0;
@@ -111,10 +143,10 @@ namespace AvatarPointerGenerator
             }
 
             totalLength /= totalCount;
-            CreatePointerObject(headTransform, "Head", totalLength);
+            CreatePointerObject(headTransform, "Head", totalLength, Vector3.zero);
         }
 
-        private static void CreatePointerObject(Transform parent, string name, float radius)
+        private static void CreatePointerObject(Transform parent, string name, float radius, Vector3 offset)
         {
             foreach (Transform t in parent)
             {
@@ -133,7 +165,7 @@ namespace AvatarPointerGenerator
             SphereCollider collider = pointerObject.GetComponent<SphereCollider>();
             //main transform
             pointerObject.transform.parent = parent;
-            pointerObject.transform.localPosition = new Vector3(0f, radius*0.75f, 0f);
+            pointerObject.transform.localPosition = new Vector3(0f, radius*0.75f, 0f) + offset;
             pointerObject.transform.localRotation = Quaternion.identity;
             pointerObject.transform.localScale = Vector3.one;
             //collider
