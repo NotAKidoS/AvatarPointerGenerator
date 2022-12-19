@@ -12,13 +12,13 @@ The tool follows the naming scheme for [HumanBodyBones](https://docs.unity3d.com
 
 Current Types:
 - Head
+- Chest
 - LeftHand
 - RightHand
 - LeftFoot
 - RightFoot
 
 Planned Types:
-- Chest
 - Index, Middle, Ring, Little fingers
 
 Planned Functionality:
