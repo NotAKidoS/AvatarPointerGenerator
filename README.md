@@ -37,3 +37,10 @@ When a collider enters a trigger, the trigger will check if the collider gameobj
 However, triggers do not check for multiple pointer components- it will always return the first one found. This means that to add a generic pointer, a new game object, pointer, and collider would need to be added to the avatar. 
 
 This would be more complex than simply having the trigger look for both Left and Right variants.
+
+---
+
+Here is the block of text where I tell you it's not my fault if you're bad at Unity.
+
+> Use of this Unity Script is done so at the user's own risk and the creator cannot be held responsible for any issues arising from its use.
+
